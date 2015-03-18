@@ -3,6 +3,7 @@ import uuid
 import logging
 
 from flask.ext.cors import cross_origin
+
 from os.path import expanduser
 import os
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -66,30 +67,17 @@ def pre_request_logging():
     )
 
 
+@app.after_request
+@cross_origin(headers=['x-auth-token', 'Content-Type'],
+              methods=['PATCH', 'DELETE'])
+def after_request(response):
+    """
+    Apply CORS for all requests
+    :param response:
+    :return:
+    """
+    return response
+
+
 #import all available routes from routes submodule
 from anarcho.routes import apps, auth, build, team, tracking, upload
-
-
-@app.route('/')
-def index():
-    return app.send_static_file("index.html")
-
-
-@app.route('/api/cert', methods=['GET'])
-@cross_origin(headers=['x-auth-token'])
-def cert():
-    return send_file(app.config['SSL_PATH']['crt'],
-                     mimetype='application/x-x509-server-cert',
-                     as_attachment=True)
-
-
-@app.route('/api/ping', methods=['GET'])
-@cross_origin(headers=['x-auth-token'])
-def ping():
-    return Response(__version__(), status=200)
-
-
-@app.errorhandler(404)
-@app.errorhandler(405)
-def stub(e):
-    return redirect("/404.html")
